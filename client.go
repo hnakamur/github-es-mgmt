@@ -152,3 +152,95 @@ func (c *Client) GetConfigurationStatus() (*ConfigurationStatus, error) {
 	}
 	return s, nil
 }
+
+type MaintenanceStatus struct {
+	Status              string              `json:"status"`
+	ScheduledTime       string              `json:"scheduled_time"`
+	ConnectionServices  []ConnectionService `json:"connection_services"`
+	CanUnsetMaintenance bool                `json:"can_unset_maintenance"`
+}
+
+type ConnectionService struct {
+	Name   string `json:"name"`
+	Number string `json:"number"`
+}
+
+func (c *Client) GetMaintenanceStatus() (*MaintenanceStatus, error) {
+	u := url.URL{
+		Scheme: c.endpoint.Scheme,
+		Host:   c.endpoint.Host,
+		Path:   "/setup/api/maintenance",
+	}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth("api_key", c.password)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBodyData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
+		return nil, NewAPIError(resp.StatusCode, resp.Header, respBodyData)
+	}
+
+	s := &MaintenanceStatus{}
+	if err := json.Unmarshal(respBodyData, s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+type maintenance struct {
+	Enabled bool   `json:"enabled"`
+	When    string `json:"when"`
+}
+
+func (c *Client) EnableOrDisableMaintenanceMode(enabled bool, when string) error {
+	m := &maintenance{
+		Enabled: enabled,
+		When:    when,
+	}
+	maintenanceBytes, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	data := url.Values{"maintenance": []string{string(maintenanceBytes)}}.Encode()
+	r := strings.NewReader(data)
+	u := url.URL{
+		Scheme: c.endpoint.Scheme,
+		Host:   c.endpoint.Host,
+		Path:   "/setup/api/maintenance",
+	}
+	req, err := http.NewRequest("POST", u.String(), r)
+	if err != nil {
+		return err
+	}
+	req.SetBasicAuth("api_key", c.password)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Length", strconv.Itoa(len(data)))
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBodyData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
+		return NewAPIError(resp.StatusCode, resp.Header, respBodyData)
+	}
+	return nil
+}
