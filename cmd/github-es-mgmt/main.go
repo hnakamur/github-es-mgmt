@@ -9,20 +9,6 @@ import (
 	"strings"
 )
 
-const globalUsage = `Usage: %s <subcommand> [options]
-
-subcommands:
-  cert set              Set certificate.
-  maintenance status    Get maintenance status.
-  maintenance enable    Enable maintenance mode.
-  maintenance disable   Disable maintenance mode.
-  version               Show version
-
-Run %s <subcommand> -h to show help for subcommand.
-`
-
-var cmdName = filepath.Base(os.Args[0])
-
 var (
 	version string
 	commit  string
@@ -34,52 +20,12 @@ func main() {
 }
 
 func run() int {
-	flag.Usage = func() {
-		fmt.Printf(globalUsage, cmdName, cmdName)
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	args := flag.Args()
-	if len(args) == 0 {
-		flag.Usage()
-		return 2
-	}
-
-	var c Command
-	var subcommandLen int
-	switch args[0] {
-	case "cert":
-		if len(args) == 1 || args[1] != "set" {
-			flag.Usage()
-			return 2
+	c, fs, err := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
+	if fs != nil {
+		fs.Usage()
+		if err != nil {
+			fmt.Fprintf(fs.Output(), "\n%s\n", err)
 		}
-		c = &CertSetCommand{}
-	case "maintenance":
-		if len(args) == 1 {
-			flag.Usage()
-			return 2
-		}
-		switch args[1] {
-		case "status":
-			c = &MaintenanceStatusCommand{}
-			subcommandLen = 2
-		case "enable":
-			c = &MaintenanceSetCommand{enabled: true}
-			subcommandLen = 2
-		case "disable":
-			c = &MaintenanceSetCommand{enabled: false}
-			subcommandLen = 2
-		}
-	default:
-		flag.Usage()
-		return 2
-	}
-
-	subcommands := args[:subcommandLen]
-	fs := buildSubdommandFlagSet(c, subcommands)
-	if err := c.Parse(fs, args[subcommandLen:]); err != nil {
-		log.Printf("%s", err)
 		return 2
 	}
 	if err := c.Execute(); err != nil {
@@ -89,26 +35,61 @@ func run() int {
 	return 0
 }
 
-func runShowVersion(args []string) error {
+type Command interface {
+	Execute() error
+}
+
+type TopLevelArgsParser struct{}
+
+func (p TopLevelArgsParser) Parse(command string, args []string) (Command, *flag.FlagSet, error) {
+	usageTemplate := fmt.Sprintf(`Usage: %s <subcommand> [options]
+
+subcommands:
+    certificate    certificate subcommand.
+    maintenance    maintenance subcommand.
+    version        show version
+
+Run %s <subcommand> -h to show help for subcommand.
+`, command, command)
+	fs := newFlagSet(nil, usageTemplate)
+	if err := fs.Parse(args); err != nil {
+		return nil, fs, nil
+	}
+	args = fs.Args()
+	if len(args) == 0 {
+		return nil, fs, nil
+	}
+
+	switch args[0] {
+	case "certificate":
+		return CertificateArgsParser{}.Parse(command, args[:1:1], args[1:])
+	case "maintenance":
+		return MaintenanceArgsParser{}.Parse(command, args[:1:1], args[1:])
+	case "version":
+		return &VersionCommand{}, nil, nil
+	default:
+		return nil, fs, nil
+	}
+}
+
+func newFlagSet(subcommands []string, usageTemplate string) *flag.FlagSet {
+	var name string
+	if len(subcommands) > 0 {
+		name = strings.Join(subcommands, " ")
+	}
+	fs := flag.NewFlagSet(name, flag.ExitOnError)
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), "%s", usageTemplate)
+		fs.PrintDefaults()
+	}
+	return fs
+}
+
+type VersionCommand struct{}
+
+func (c *VersionCommand) Execute() error {
 	fmt.Printf("Version: %s\n", version)
 	fmt.Printf("Commit:  %s\n", commit)
 	fmt.Printf("Date:    %s\n", date)
 	return nil
-}
-
-type Command interface {
-	UsageTemplate() string
-	Parse(fs *flag.FlagSet, args []string) error
-	Execute() error
-}
-
-func buildSubdommandFlagSet(c Command, subcommands []string) *flag.FlagSet {
-	name := strings.Join(subcommands, " ")
-	fs := flag.NewFlagSet(name, flag.ExitOnError)
-	fs.Usage = func() {
-		usageStr := strings.ReplaceAll(c.UsageTemplate(), "{{command}}", cmdName)
-		fmt.Fprintf(fs.Output(), "%s", usageStr)
-		fs.PrintDefaults()
-	}
-	return fs
 }

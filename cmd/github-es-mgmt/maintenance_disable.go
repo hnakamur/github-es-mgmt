@@ -13,17 +13,17 @@ import (
 	mgmt "github.com/hnakamur/github-es-mgmt"
 )
 
-type MaintenanceStatusArgsParser struct{}
+type MaintenanceDisableArgsParser struct{}
 
-func (p MaintenanceStatusArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s [options]
+func (p MaintenanceDisableArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
 	fs := newFlagSet(subcommands, usageTemplate)
-
-	c := MaintenanceStatusCommand{}
+	c := MaintenanceDisableCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
+	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
 		return nil, fs, nil
@@ -33,30 +33,32 @@ options:
 	if c.password == "" {
 		return nil, fs, errors.New("Please set MGMT_PASSWORD environment variable")
 	}
-
 	if c.Endpoint == "" {
 		return nil, fs, errors.New("Please set \"-endpoint\" flag")
+	}
+	if c.When == "" {
+		return nil, fs, errors.New("Please set \"-when\" flag")
 	}
 
 	return &c, nil, nil
 }
 
-type MaintenanceStatusCommand struct {
+type MaintenanceDisableCommand struct {
 	password string
 	Endpoint string
+	When     string
 	Timeout  time.Duration
 }
 
-func (c *MaintenanceStatusCommand) Execute() error {
+func (c *MaintenanceDisableCommand) Execute() error {
 	cfg := mgmt.NewClientConfig().SetHTTPClient(&http.Client{Timeout: c.Timeout})
 	client, err := mgmt.NewClient(c.Endpoint, c.password, cfg)
 	if err != nil {
 		return err
 	}
-	s, err := client.GetMaintenanceStatus()
-	if err != nil {
+	if err := client.EnableOrDisableMaintenanceMode(false, c.When); err != nil {
 		return err
 	}
-	log.Printf("got maintenance status: %+v", *s)
+	log.Printf("disabled maintenance mode successfully.")
 	return nil
 }

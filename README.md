@@ -16,24 +16,24 @@ export MGMT_PASSWORD=_your_password_here_
 ### Set certificate
 
 ```
-github-es-mgmt set-cert -endpoint https://your-github-es.example.jp:8443 -cert /path/to/your.crt -key /path/to/your.key
+github-es-mgmt certificate set -endpoint https://your-github-es.example.jp:8443 -cert /path/to/your.crt -key /path/to/your.key
 ```
 
 ### Get maintenance status
 
 ```
-github-es-mgmt get-maintenance -endpoint https://your-github-es.example.jp:8443
+github-es-mgmt maintenance status -endpoint https://your-github-es.example.jp:8443
 ```
 
 ### Enable maintenance mode
 
 ```
-github-es-mgmt set-maintenance -endpoint https://your-github-es.example.jp:8443 -enabled=true -when now
+github-es-mgmt maintenance enable -endpoint https://your-github-es.example.jp:8443 -when now
 ```
 
 ### Disable maintenance mode
 
 ```
-github-es-mgmt set-maintenance -endpoint https://your-github-es.example.jp:8443 -enabled=false -when now
+github-es-mgmt maintenance disable -endpoint https://your-github-es.example.jp:8443 -when now
 ```
 

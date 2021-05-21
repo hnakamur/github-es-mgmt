@@ -11,12 +11,48 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	mgmt "github.com/hnakamur/github-es-mgmt"
 )
 
-type CertSetCommand struct {
+type CertificateSetArgsParser struct{}
+
+func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
+
+options:
+`, command, strings.Join(subcommands, " "))
+	fs := newFlagSet(subcommands, usageTemplate)
+	c := CertificateSetCommand{}
+	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
+	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")
+	fs.StringVar(&c.KeyFilename, "key", "", "key PEM filename")
+	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
+	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
+	if err := fs.Parse(args); err != nil {
+		return nil, fs, nil
+	}
+
+	c.password = os.Getenv("MGMT_PASSWORD")
+	if c.password == "" {
+		return nil, fs, errors.New("Please set MGMT_PASSWORD environment variable")
+	}
+
+	if c.Endpoint == "" {
+		return nil, fs, errors.New("Please set \"-endpoint\" flag")
+	}
+	if c.CertFilename == "" {
+		return nil, fs, errors.New("Please set \"-cert\" flag")
+	}
+	if c.KeyFilename == "" {
+		return nil, fs, errors.New("Please set \"-key\" flag")
+	}
+	return &c, nil, nil
+}
+
+type CertificateSetCommand struct {
 	password           string
 	Endpoint           string
 	CertFilename       string
@@ -25,45 +61,7 @@ type CertSetCommand struct {
 	WaitConfigInterval time.Duration
 }
 
-func (c *CertSetCommand) UsageTemplate() string {
-	return `Usage: {{command}} cert set [options]
-
-options:
-`
-}
-
-func (c *CertSetCommand) Parse(fs *flag.FlagSet, args []string) error {
-	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
-	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")
-	fs.StringVar(&c.KeyFilename, "key", "", "key PEM filename")
-	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
-	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-
-	c.password = os.Getenv("MGMT_PASSWORD")
-	if c.password == "" {
-		return errors.New("Please set MGMT_PASSWORD environment variable")
-	}
-
-	if c.Endpoint == "" {
-		return errors.New("Please set \"-endpoint\" flag")
-	}
-	if _, err := url.Parse(c.Endpoint); err != nil {
-		return fmt.Errorf("cannot parse endpoint: %s", err)
-	}
-
-	if c.CertFilename == "" {
-		return errors.New("Please set \"-cert\" flag")
-	}
-	if c.KeyFilename == "" {
-		return errors.New("Please set \"-key\" flag")
-	}
-	return nil
-}
-
-func (c *CertSetCommand) Execute() error {
+func (c *CertificateSetCommand) Execute() error {
 	cert, key, err := readCertAndKey(c.CertFilename, c.KeyFilename)
 	if err != nil {
 		return err
