@@ -27,7 +27,7 @@ options:
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")
 	fs.StringVar(&c.KeyFilename, "key", "", "key PEM filename")
-	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
+	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
 	if err := fs.Parse(args); err != nil {
 		return nil, newUsage(fs, "")
