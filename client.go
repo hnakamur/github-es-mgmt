@@ -48,63 +48,27 @@ func NewClient(endpoint, password string, config *ClientConfig) (*Client, error)
 }
 
 func (c *Client) SetSettings(settingsJson string) error {
-	data := url.Values{"settings": []string{settingsJson}}.Encode()
-	r := strings.NewReader(data)
-	u := url.URL{
-		Scheme: c.endpoint.Scheme,
-		Host:   c.endpoint.Host,
-		Path:   "/setup/api/settings",
-	}
-	req, err := http.NewRequest("PUT", u.String(), r)
+	reqBody := url.Values{"settings": []string{settingsJson}}.Encode()
+	req, err := c.newRequest("PUT", "/setup/api/settings", reqBody)
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth("api_key", c.password)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Content-Length", strconv.Itoa(len(data)))
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("Content-Length", strconv.Itoa(len(reqBody)))
 
-	resp, err := c.client.Do(req)
-	if err != nil {
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	defer resp.Body.Close()
-
-	respBodyData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
-		return NewAPIError(resp.StatusCode, resp.Header, respBodyData)
 	}
 	return nil
 }
 
 func (c *Client) StartConfigurationProcess() error {
-	u := url.URL{
-		Scheme: c.endpoint.Scheme,
-		Host:   c.endpoint.Host,
-		Path:   "/setup/api/configure",
-	}
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := c.newRequest("POST", "/setup/api/configure", "")
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth("api_key", c.password)
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
+	if _, err := c.doRequest(req); err != nil {
 		return err
-	}
-	defer resp.Body.Close()
-
-	respBodyData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
-		return NewAPIError(resp.StatusCode, resp.Header, respBodyData)
 	}
 	return nil
 }
@@ -120,34 +84,18 @@ type ConfigurationStatusProgress struct {
 }
 
 func (c *Client) GetConfigurationStatus() (*ConfigurationStatus, error) {
-	u := url.URL{
-		Scheme: c.endpoint.Scheme,
-		Host:   c.endpoint.Host,
-		Path:   "/setup/api/configcheck",
-	}
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := c.newRequest("GET", "/setup/api/configcheck", "")
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth("api_key", c.password)
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	resp, err := c.client.Do(req)
+	respBody, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBodyData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
-		return nil, NewAPIError(resp.StatusCode, resp.Header, respBodyData)
 	}
 
 	s := &ConfigurationStatus{}
-	if err := json.Unmarshal(respBodyData, s); err != nil {
+	if err := json.Unmarshal(respBody, s); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -166,46 +114,28 @@ type ConnectionService struct {
 }
 
 func (c *Client) GetMaintenanceStatus() (*MaintenanceStatus, error) {
-	u := url.URL{
-		Scheme: c.endpoint.Scheme,
-		Host:   c.endpoint.Host,
-		Path:   "/setup/api/maintenance",
-	}
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := c.newRequest("GET", "/setup/api/maintenance", "")
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth("api_key", c.password)
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	resp, err := c.client.Do(req)
+	respBody, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBodyData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
-		return nil, NewAPIError(resp.StatusCode, resp.Header, respBodyData)
 	}
 
 	s := &MaintenanceStatus{}
-	if err := json.Unmarshal(respBodyData, s); err != nil {
+	if err := json.Unmarshal(respBody, s); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-type maintenance struct {
-	Enabled bool   `json:"enabled"`
-	When    string `json:"when"`
-}
-
 func (c *Client) EnableOrDisableMaintenanceMode(enabled bool, when string) error {
-	m := &maintenance{
+	m := &struct {
+		Enabled bool   `json:"enabled"`
+		When    string `json:"when"`
+	}{
 		Enabled: enabled,
 		When:    when,
 	}
@@ -213,34 +143,52 @@ func (c *Client) EnableOrDisableMaintenanceMode(enabled bool, when string) error
 	if err != nil {
 		return err
 	}
-	data := url.Values{"maintenance": []string{string(maintenanceBytes)}}.Encode()
-	r := strings.NewReader(data)
+	reqBody := url.Values{"maintenance": []string{string(maintenanceBytes)}}.Encode()
+	req, err := c.newRequest("POST", "/setup/api/maintenance", reqBody)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Length", strconv.Itoa(len(reqBody)))
+
+	if _, err := c.doRequest(req); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) newRequest(method, path, body string) (*http.Request, error) {
 	u := url.URL{
 		Scheme: c.endpoint.Scheme,
 		Host:   c.endpoint.Host,
-		Path:   "/setup/api/maintenance",
+		Path:   path,
 	}
-	req, err := http.NewRequest("POST", u.String(), r)
+	var r io.Reader
+	if body != "" {
+		r = strings.NewReader(body)
+	}
+	req, err := http.NewRequest(method, u.String(), r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.SetBasicAuth("api_key", c.password)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Content-Length", strconv.Itoa(len(data)))
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	return req, nil
+}
 
+func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	respBodyData, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.StatusCode < http.StatusOK || http.StatusMultipleChoices <= resp.StatusCode {
-		return NewAPIError(resp.StatusCode, resp.Header, respBodyData)
+		return nil, NewAPIError(resp.StatusCode, resp.Header, body)
 	}
-	return nil
+	return body, nil
 }
