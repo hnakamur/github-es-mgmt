@@ -16,11 +16,11 @@ import (
 type MaintenanceStatusArgsParser struct{}
 
 func (p MaintenanceStatusArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s [options]
+	usage := fmt.Sprintf(`Usage: %s %s [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usageTemplate)
+	fs := newFlagSet(subcommands, usage)
 
 	c := MaintenanceStatusCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")

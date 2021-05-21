@@ -42,7 +42,7 @@ type Command interface {
 type TopLevelArgsParser struct{}
 
 func (p TopLevelArgsParser) Parse(command string, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s <subcommand> [options]
+	usage := fmt.Sprintf(`Usage: %s <subcommand> [options]
 
 subcommands:
     certificate    certificate subcommand.
@@ -51,7 +51,7 @@ subcommands:
 
 Run %s <subcommand> -h to show help for subcommand.
 `, command, command)
-	fs := newFlagSet(nil, usageTemplate)
+	fs := newFlagSet(nil, usage)
 	if err := fs.Parse(args); err != nil {
 		return nil, fs, nil
 	}
@@ -72,14 +72,14 @@ Run %s <subcommand> -h to show help for subcommand.
 	}
 }
 
-func newFlagSet(subcommands []string, usageTemplate string) *flag.FlagSet {
+func newFlagSet(subcommands []string, usage string) *flag.FlagSet {
 	var name string
 	if len(subcommands) > 0 {
 		name = strings.Join(subcommands, " ")
 	}
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintf(fs.Output(), "%s", usageTemplate)
+		fmt.Fprint(fs.Output(), usage)
 		fs.PrintDefaults()
 	}
 	return fs

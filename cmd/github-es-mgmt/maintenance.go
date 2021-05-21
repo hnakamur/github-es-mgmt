@@ -9,14 +9,14 @@ import (
 type MaintenanceArgsParser struct{}
 
 func (p MaintenanceArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
+	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 subcommands:
     status    Get maintenance status.
     enable    Enable maintenance mode.
     disable   Disable maintenance mode.
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usageTemplate)
+	fs := newFlagSet(subcommands, usage)
 	if err := fs.Parse(args); err != nil {
 		return nil, fs, nil
 	}

@@ -20,11 +20,11 @@ import (
 type CertificateSetArgsParser struct{}
 
 func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
+	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usageTemplate)
+	fs := newFlagSet(subcommands, usage)
 	c := CertificateSetCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")

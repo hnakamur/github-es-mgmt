@@ -9,12 +9,12 @@ import (
 type CertificateArgsParser struct{}
 
 func (p CertificateArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
+	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 subcommands:
     set       Set certificate.
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usageTemplate)
+	fs := newFlagSet(subcommands, usage)
 	if err := fs.Parse(args); err != nil {
 		return nil, fs, nil
 	}

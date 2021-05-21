@@ -16,11 +16,11 @@ import (
 type MaintenanceDisableArgsParser struct{}
 
 func (p MaintenanceDisableArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
-	usageTemplate := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
+	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usageTemplate)
+	fs := newFlagSet(subcommands, usage)
 	c := MaintenanceDisableCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
