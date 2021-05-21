@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +13,7 @@ import (
 
 type MaintenanceEnableArgsParser struct{}
 
-func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -26,21 +24,21 @@ options:
 	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 
 	c.password = os.Getenv("MGMT_PASSWORD")
 	if c.password == "" {
-		return nil, fs, errors.New("Please set MGMT_PASSWORD environment variable")
+		return nil, newUsage(fs, "Please set MGMT_PASSWORD environment variable")
 	}
 	if c.Endpoint == "" {
-		return nil, fs, errors.New("Please set \"-endpoint\" flag")
+		return nil, newUsage(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.When == "" {
-		return nil, fs, errors.New("Please set \"-when\" flag")
+		return nil, newUsage(fs, "Please set \"-when\" flag")
 	}
 
-	return &c, nil, nil
+	return &c, nil
 }
 
 type MaintenanceEnableCommand struct {

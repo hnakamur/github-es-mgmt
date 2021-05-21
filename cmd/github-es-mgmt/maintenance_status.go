@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +13,7 @@ import (
 
 type MaintenanceStatusArgsParser struct{}
 
-func (p MaintenanceStatusArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+func (p MaintenanceStatusArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
 	usage := fmt.Sprintf(`Usage: %s %s [options]
 
 options:
@@ -26,19 +24,19 @@ options:
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 
 	c.password = os.Getenv("MGMT_PASSWORD")
 	if c.password == "" {
-		return nil, fs, errors.New("Please set MGMT_PASSWORD environment variable")
+		return nil, newUsage(fs, "Please set MGMT_PASSWORD environment variable")
 	}
 
 	if c.Endpoint == "" {
-		return nil, fs, errors.New("Please set \"-endpoint\" flag")
+		return nil, newUsage(fs, "Please set \"-endpoint\" flag")
 	}
 
-	return &c, nil, nil
+	return &c, nil
 }
 
 type MaintenanceStatusCommand struct {

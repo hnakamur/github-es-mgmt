@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,7 +17,7 @@ import (
 
 type CertificateSetArgsParser struct{}
 
-func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -32,24 +30,24 @@ options:
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 
 	c.password = os.Getenv("MGMT_PASSWORD")
 	if c.password == "" {
-		return nil, fs, errors.New("Please set MGMT_PASSWORD environment variable")
+		return nil, newUsage(fs, "Please set MGMT_PASSWORD environment variable")
 	}
 
 	if c.Endpoint == "" {
-		return nil, fs, errors.New("Please set \"-endpoint\" flag")
+		return nil, newUsage(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.CertFilename == "" {
-		return nil, fs, errors.New("Please set \"-cert\" flag")
+		return nil, newUsage(fs, "Please set \"-cert\" flag")
 	}
 	if c.KeyFilename == "" {
-		return nil, fs, errors.New("Please set \"-key\" flag")
+		return nil, newUsage(fs, "Please set \"-key\" flag")
 	}
-	return &c, nil, nil
+	return &c, nil
 }
 
 type CertificateSetCommand struct {

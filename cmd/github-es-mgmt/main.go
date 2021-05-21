@@ -20,12 +20,9 @@ func main() {
 }
 
 func run() int {
-	c, fs, err := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
-	if fs != nil {
-		fs.Usage()
-		if err != nil {
-			fmt.Fprintf(fs.Output(), "\n%s\n", err)
-		}
+	c, usage := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
+	if usage != nil {
+		usage()
 		return 2
 	}
 	if err := c.Execute(); err != nil {
@@ -35,13 +32,15 @@ func run() int {
 	return 0
 }
 
+type Usage func()
+
 type Command interface {
 	Execute() error
 }
 
 type TopLevelArgsParser struct{}
 
-func (p TopLevelArgsParser) Parse(command string, args []string) (Command, *flag.FlagSet, error) {
+func (p TopLevelArgsParser) Parse(command string, args []string) (Command, Usage) {
 	usage := fmt.Sprintf(`Usage: %s <subcommand> [options]
 
 subcommands:
@@ -53,11 +52,11 @@ Run %s <subcommand> -h to show help for subcommand.
 `, command, command)
 	fs := newFlagSet(nil, usage)
 	if err := fs.Parse(args); err != nil {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 	args = fs.Args()
 	if len(args) == 0 {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 
 	switch args[0] {
@@ -66,9 +65,9 @@ Run %s <subcommand> -h to show help for subcommand.
 	case "maintenance":
 		return MaintenanceArgsParser{}.Parse(command, args[:1:1], args[1:])
 	case "version":
-		return &VersionCommand{}, nil, nil
+		return &VersionCommand{}, nil
 	default:
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 }
 
@@ -83,6 +82,15 @@ func newFlagSet(subcommands []string, usage string) *flag.FlagSet {
 		fs.PrintDefaults()
 	}
 	return fs
+}
+
+func newUsage(fs *flag.FlagSet, additionalMessage string) Usage {
+	return func() {
+		fs.Usage()
+		if additionalMessage != "" {
+			fmt.Fprintf(fs.Output(), "\n%s\n", additionalMessage)
+		}
+	}
 }
 
 type VersionCommand struct{}

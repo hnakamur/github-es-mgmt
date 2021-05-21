@@ -1,14 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"strings"
 )
 
 type MaintenanceArgsParser struct{}
 
-func (p MaintenanceArgsParser) Parse(command string, subcommands, args []string) (Command, *flag.FlagSet, error) {
+func (p MaintenanceArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 subcommands:
@@ -18,11 +17,11 @@ subcommands:
 `, command, strings.Join(subcommands, " "))
 	fs := newFlagSet(subcommands, usage)
 	if err := fs.Parse(args); err != nil {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 	args = fs.Args()
 	if len(args) == 0 {
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 
 	switch args[0] {
@@ -33,6 +32,6 @@ subcommands:
 	case "disable":
 		return MaintenanceDisableArgsParser{}.Parse(command, append(subcommands, args[0]), args[1:])
 	default:
-		return nil, fs, nil
+		return nil, newUsage(fs, "")
 	}
 }
