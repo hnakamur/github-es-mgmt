@@ -17,12 +17,12 @@ import (
 
 type CertificateSetArgsParser struct{}
 
-func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
+func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usage)
+	fs := NewFlagSet(usage)
 	c := CertificateSetCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")
@@ -30,22 +30,22 @@ options:
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
 	if err := fs.Parse(args); err != nil {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 
 	c.password = os.Getenv("MGMT_PASSWORD")
 	if c.password == "" {
-		return nil, newUsage(fs, "Please set MGMT_PASSWORD environment variable")
+		return nil, fs.SetError("Please set MGMT_PASSWORD environment variable")
 	}
 
 	if c.Endpoint == "" {
-		return nil, newUsage(fs, "Please set \"-endpoint\" flag")
+		return nil, fs.SetError("Please set \"-endpoint\" flag")
 	}
 	if c.CertFilename == "" {
-		return nil, newUsage(fs, "Please set \"-cert\" flag")
+		return nil, fs.SetError("Please set \"-cert\" flag")
 	}
 	if c.KeyFilename == "" {
-		return nil, newUsage(fs, "Please set \"-key\" flag")
+		return nil, fs.SetError("Please set \"-key\" flag")
 	}
 	return &c, nil
 }

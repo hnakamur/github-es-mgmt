@@ -1,12 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 var (
@@ -19,9 +17,9 @@ func main() {
 }
 
 func run() int {
-	c, usage := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
-	if usage != nil {
-		usage()
+	c, u := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
+	if u != nil {
+		u.Usage()
 		return 2
 	}
 	if err := c.Execute(); err != nil {
@@ -31,15 +29,13 @@ func run() int {
 	return 0
 }
 
-type Usage func()
-
 type Command interface {
 	Execute() error
 }
 
 type TopLevelArgsParser struct{}
 
-func (p TopLevelArgsParser) Parse(command string, args []string) (Command, Usage) {
+func (p TopLevelArgsParser) Parse(command string, args []string) (Command, Usager) {
 	usage := fmt.Sprintf(`Usage: %s <subcommand> [options]
 
 subcommands:
@@ -49,13 +45,13 @@ subcommands:
 
 Run %s <subcommand> -h to show help for subcommand.
 `, command, command)
-	fs := newFlagSet(nil, usage)
+	fs := NewFlagSet(usage)
 	if err := fs.Parse(args); err != nil {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 	args = fs.Args()
 	if len(args) == 0 {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 
 	switch args[0] {
@@ -66,29 +62,7 @@ Run %s <subcommand> -h to show help for subcommand.
 	case "version":
 		return &VersionCommand{}, nil
 	default:
-		return nil, newUsage(fs, "")
-	}
-}
-
-func newFlagSet(subcommands []string, usage string) *flag.FlagSet {
-	var name string
-	if len(subcommands) > 0 {
-		name = strings.Join(subcommands, " ")
-	}
-	fs := flag.NewFlagSet(name, flag.ExitOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), usage)
-		fs.PrintDefaults()
-	}
-	return fs
-}
-
-func newUsage(fs *flag.FlagSet, additionalMessage string) Usage {
-	return func() {
-		fs.Usage()
-		if additionalMessage != "" {
-			fmt.Fprintf(fs.Output(), "\n%s\n", additionalMessage)
-		}
+		return nil, fs
 	}
 }
 

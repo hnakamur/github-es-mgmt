@@ -7,7 +7,7 @@ import (
 
 type MaintenanceArgsParser struct{}
 
-func (p MaintenanceArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
+func (p MaintenanceArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 subcommands:
@@ -15,13 +15,13 @@ subcommands:
     enable    Enable maintenance mode.
     disable   Disable maintenance mode.
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usage)
+	fs := NewFlagSet(usage)
 	if err := fs.Parse(args); err != nil {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 	args = fs.Args()
 	if len(args) == 0 {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 
 	switch args[0] {
@@ -32,6 +32,6 @@ subcommands:
 	case "disable":
 		return MaintenanceDisableArgsParser{}.Parse(command, append(subcommands, args[0]), args[1:])
 	default:
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 }

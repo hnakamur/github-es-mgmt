@@ -13,29 +13,29 @@ import (
 
 type MaintenanceEnableArgsParser struct{}
 
-func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, Usage) {
+func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
 `, command, strings.Join(subcommands, " "))
-	fs := newFlagSet(subcommands, usage)
+	fs := NewFlagSet(usage)
 	c := MaintenanceEnableCommand{}
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
-		return nil, newUsage(fs, "")
+		return nil, fs
 	}
 
 	c.password = os.Getenv("MGMT_PASSWORD")
 	if c.password == "" {
-		return nil, newUsage(fs, "Please set MGMT_PASSWORD environment variable")
+		return nil, fs.SetError("Please set MGMT_PASSWORD environment variable")
 	}
 	if c.Endpoint == "" {
-		return nil, newUsage(fs, "Please set \"-endpoint\" flag")
+		return nil, fs.SetError("Please set \"-endpoint\" flag")
 	}
 	if c.When == "" {
-		return nil, newUsage(fs, "Please set \"-when\" flag")
+		return nil, fs.SetError("Please set \"-when\" flag")
 	}
 
 	return &c, nil
