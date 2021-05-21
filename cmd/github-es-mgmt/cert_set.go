@@ -16,7 +16,7 @@ import (
 	mgmt "github.com/hnakamur/github-es-mgmt"
 )
 
-type SetCertCommand struct {
+type CertSetCommand struct {
 	password           string
 	Endpoint           string
 	CertFilename       string
@@ -25,14 +25,14 @@ type SetCertCommand struct {
 	WaitConfigInterval time.Duration
 }
 
-func (c *SetCertCommand) UsageTemplate() string {
-	return `Usage: {{command}} set-cert [options]
+func (c *CertSetCommand) UsageTemplate() string {
+	return `Usage: {{command}} cert set [options]
 
 options:
 `
 }
 
-func (c *SetCertCommand) Parse(fs *flag.FlagSet, args []string) error {
+func (c *CertSetCommand) Parse(fs *flag.FlagSet, args []string) error {
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.CertFilename, "cert", "", "certificate PEM filename")
 	fs.StringVar(&c.KeyFilename, "key", "", "key PEM filename")
@@ -63,7 +63,7 @@ func (c *SetCertCommand) Parse(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
-func (c *SetCertCommand) Execute() error {
+func (c *CertSetCommand) Execute() error {
 	cert, key, err := readCertAndKey(c.CertFilename, c.KeyFilename)
 	if err != nil {
 		return err

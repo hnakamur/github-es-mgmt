@@ -13,24 +13,29 @@ import (
 	mgmt "github.com/hnakamur/github-es-mgmt"
 )
 
-type SetMaintenanceCommand struct {
+type MaintenanceSetCommand struct {
 	password string
+	enabled  bool
 	Endpoint string
-	Enabled  bool
 	When     string
 	Timeout  time.Duration
 }
 
-func (c *SetMaintenanceCommand) UsageTemplate() string {
-	return `Usage: {{command}} set-maintenance [options]
+func (c *MaintenanceSetCommand) UsageTemplate() string {
+	var op string
+	if c.enabled {
+		op = "enable"
+	} else {
+		op = "disable"
+	}
+	return fmt.Sprintf(`Usage: {{command}} maintenance %s [options]
 
 options:
-`
+`, op)
 }
 
-func (c *SetMaintenanceCommand) Parse(fs *flag.FlagSet, args []string) error {
+func (c *MaintenanceSetCommand) Parse(fs *flag.FlagSet, args []string) error {
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
-	fs.BoolVar(&c.Enabled, "enabled", true, "enable or disable maintenance mode")
 	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
@@ -56,17 +61,17 @@ func (c *SetMaintenanceCommand) Parse(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
-func (c *SetMaintenanceCommand) Execute() error {
+func (c *MaintenanceSetCommand) Execute() error {
 	cfg := mgmt.NewClientConfig().SetHTTPClient(&http.Client{Timeout: c.Timeout})
 	client, err := mgmt.NewClient(c.Endpoint, c.password, cfg)
 	if err != nil {
 		return err
 	}
-	if err := client.EnableOrDisableMaintenanceMode(c.Enabled, c.When); err != nil {
+	if err := client.EnableOrDisableMaintenanceMode(c.enabled, c.When); err != nil {
 		return err
 	}
 	var op string
-	if c.Enabled {
+	if c.enabled {
 		op = "enabled"
 	} else {
 		op = "disabled"

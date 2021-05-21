@@ -12,10 +12,11 @@ import (
 const globalUsage = `Usage: %s <subcommand> [options]
 
 subcommands:
-  set-cert            Set certificate.
-  get-maintenance     Get maintenance status.
-  set-maintenance     Enable or disable maintenance mode.
-  version             Show version
+  cert set              Set certificate.
+  maintenance status    Get maintenance status.
+  maintenance enable    Enable maintenance mode.
+  maintenance disable   Disable maintenance mode.
+  version               Show version
 
 Run %s <subcommand> -h to show help for subcommand.
 `
@@ -46,20 +47,38 @@ func run() int {
 	}
 
 	var c Command
+	var subcommandLen int
 	switch args[0] {
-	case "set-cert":
-		c = &SetCertCommand{}
-	case "get-maintenance":
-		c = &GetMaintenanceCommand{}
-	case "set-maintenance":
-		c = &SetMaintenanceCommand{}
+	case "cert":
+		if len(args) == 1 || args[1] != "set" {
+			flag.Usage()
+			return 2
+		}
+		c = &CertSetCommand{}
+	case "maintenance":
+		if len(args) == 1 {
+			flag.Usage()
+			return 2
+		}
+		switch args[1] {
+		case "status":
+			c = &MaintenanceStatusCommand{}
+			subcommandLen = 2
+		case "enable":
+			c = &MaintenanceSetCommand{enabled: true}
+			subcommandLen = 2
+		case "disable":
+			c = &MaintenanceSetCommand{enabled: false}
+			subcommandLen = 2
+		}
 	default:
 		flag.Usage()
 		return 2
 	}
 
-	fs := buildSubdommandFlagSet(c, args)
-	if err := c.Parse(fs, args[1:]); err != nil {
+	subcommands := args[:subcommandLen]
+	fs := buildSubdommandFlagSet(c, subcommands)
+	if err := c.Parse(fs, args[subcommandLen:]); err != nil {
 		log.Printf("%s", err)
 		return 2
 	}
@@ -83,8 +102,9 @@ type Command interface {
 	Execute() error
 }
 
-func buildSubdommandFlagSet(c Command, args []string) *flag.FlagSet {
-	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
+func buildSubdommandFlagSet(c Command, subcommands []string) *flag.FlagSet {
+	name := strings.Join(subcommands, " ")
+	fs := flag.NewFlagSet(name, flag.ExitOnError)
 	fs.Usage = func() {
 		usageStr := strings.ReplaceAll(c.UsageTemplate(), "{{command}}", cmdName)
 		fmt.Fprintf(fs.Output(), "%s", usageStr)

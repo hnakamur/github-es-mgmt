@@ -13,20 +13,20 @@ import (
 	mgmt "github.com/hnakamur/github-es-mgmt"
 )
 
-type GetMaintenanceCommand struct {
+type MaintenanceStatusCommand struct {
 	password string
 	Endpoint string
 	Timeout  time.Duration
 }
 
-func (c *GetMaintenanceCommand) UsageTemplate() string {
-	return `Usage: {{command}} get-maintenance [options]
+func (c *MaintenanceStatusCommand) UsageTemplate() string {
+	return `Usage: {{command}} maintenance status [options]
 
 options:
 `
 }
 
-func (c *GetMaintenanceCommand) Parse(fs *flag.FlagSet, args []string) error {
+func (c *MaintenanceStatusCommand) Parse(fs *flag.FlagSet, args []string) error {
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
@@ -48,7 +48,7 @@ func (c *GetMaintenanceCommand) Parse(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
-func (c *GetMaintenanceCommand) Execute() error {
+func (c *MaintenanceStatusCommand) Execute() error {
 	cfg := mgmt.NewClientConfig().SetHTTPClient(&http.Client{Timeout: c.Timeout})
 	client, err := mgmt.NewClient(c.Endpoint, c.password, cfg)
 	if err != nil {
