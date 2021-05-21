@@ -25,7 +25,7 @@ func run() int {
 		return 2
 	}
 	if err := c.Execute(); err != nil {
-		log.Printf("%s", err)
+		log.Print(err)
 		return 1
 	}
 	return 0
