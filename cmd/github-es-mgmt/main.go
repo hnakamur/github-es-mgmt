@@ -11,7 +11,6 @@ import (
 
 var (
 	version string
-	commit  string
 	date    string
 )
 
@@ -97,7 +96,6 @@ type VersionCommand struct{}
 
 func (c *VersionCommand) Execute() error {
 	fmt.Printf("Version: %s\n", version)
-	fmt.Printf("Commit:  %s\n", commit)
 	fmt.Printf("Date:    %s\n", date)
 	return nil
 }
