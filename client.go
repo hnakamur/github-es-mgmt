@@ -47,6 +47,19 @@ func NewClient(endpoint, password string, config *ClientConfig) (*Client, error)
 	}, nil
 }
 
+func (c *Client) GetSettings() (string, error) {
+	req, err := c.newRequest("GET", "/setup/api/settings", "")
+	if err != nil {
+		return "", err
+	}
+
+	resBody, err := c.doRequest(req)
+	if err != nil {
+		return "", err
+	}
+	return string(resBody), nil
+}
+
 func (c *Client) SetSettings(settingsJson string) error {
 	reqBody := url.Values{"settings": []string{settingsJson}}.Encode()
 	req, err := c.newRequest("PUT", "/setup/api/settings", reqBody)

@@ -80,17 +80,8 @@ func (c *CertificateSetCommand) Execute() error {
 	}
 	log.Printf("finished start configuration process API successfully.")
 
-	for {
-		s, err := client.GetConfigurationStatus()
-		if err != nil {
-			return err
-		}
-		log.Printf("got configuration status: %+v", *s)
-		if s.Status == configurationStatusSuccess {
-			break
-		}
-
-		time.Sleep(c.WaitConfigInterval)
+	if err := waitForConfigurationProcessToFinish(client, c.WaitConfigInterval); err != nil {
+		return err
 	}
 
 	u, err := url.Parse(c.Endpoint)
@@ -143,8 +134,6 @@ func setCertificate(c *mgmt.Client, cert, key []byte) error {
 	}
 	return nil
 }
-
-const configurationStatusSuccess = "success"
 
 func readCertAndKey(certFilename, keyFilename string) (cert, key []byte, err error) {
 	cert, err = os.ReadFile(certFilename)
