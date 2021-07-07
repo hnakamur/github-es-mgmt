@@ -41,6 +41,7 @@ func (p TopLevelArgsParser) Parse(command string, args []string) (Command, Usage
 subcommands:
     certificate    certificate subcommand.
     maintenance    maintenance subcommand.
+    settings       settings subcommand.
     version        show version
 
 Run %s <subcommand> -h to show help for subcommand.
@@ -59,6 +60,8 @@ Run %s <subcommand> -h to show help for subcommand.
 		return CertificateArgsParser{}.Parse(command, args[:1:1], args[1:])
 	case "maintenance":
 		return MaintenanceArgsParser{}.Parse(command, args[:1:1], args[1:])
+	case "settings":
+		return SettingsArgsParser{}.Parse(command, args[:1:1], args[1:])
 	case "version":
 		return &VersionCommand{}, nil
 	default:
