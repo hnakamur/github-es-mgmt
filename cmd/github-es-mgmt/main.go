@@ -45,6 +45,8 @@ subcommands:
     version        show version
 
 Run %s <subcommand> -h to show help for subcommand.
+
+Source repository is https://github.com/hnakamur/github-es-mgmt
 `, command, command)
 	fs := NewFlagSet(usage)
 	if err := fs.Parse(args); err != nil {
