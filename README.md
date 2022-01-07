@@ -7,7 +7,8 @@ This project is open source but closed development.
 
 ## Usage
 
-Set management console password to the environment variable `MGMT_PASSWORD`.
+You can set the management console password to the environment variable `MGMT_PASSWORD`.
+Or you can input the password at the prompt `Enter Management Console password: `.
 
 ```
 export MGMT_PASSWORD=_your_password_here_

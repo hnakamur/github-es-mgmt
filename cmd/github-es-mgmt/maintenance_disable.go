@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -27,10 +26,7 @@ options:
 		return nil, fs
 	}
 
-	c.password = os.Getenv("MGMT_PASSWORD")
-	if c.password == "" {
-		return nil, fs.SetError("Please set MGMT_PASSWORD environment variable")
-	}
+	c.password = GetManagementConsolePassword()
 	if c.Endpoint == "" {
 		return nil, fs.SetError("Please set \"-endpoint\" flag")
 	}
