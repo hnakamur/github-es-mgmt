@@ -61,7 +61,7 @@ func (c *SettingsSetCommand) Execute() error {
 	}
 
 	if err := client.SetSettings(string(settings)); err != nil {
-		return err
+		return fmt.Errorf("set settings: %s", err)
 	}
 	log.Printf("finished set settings API successfully.")
 
