@@ -2,12 +2,19 @@ package mgmt
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
+
+var debug = func() bool {
+	b, err := strconv.ParseBool(os.Getenv("DEBUG"))
+	return err == nil && b
+}()
 
 type ClientConfig struct {
 	client *http.Client
@@ -64,7 +71,7 @@ func (c *Client) SetSettings(settingsJson string) error {
 	reqBody := url.Values{"settings": []string{settingsJson}}.Encode()
 	req, err := c.newRequest("PUT", "/setup/api/settings", reqBody)
 	if err != nil {
-		return err
+		return fmt.Errorf("create PUT /setup/api/settings request: %s", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Content-Length", strconv.Itoa(len(reqBody)))
@@ -176,6 +183,9 @@ func (c *Client) newRequest(method, path, body string) (*http.Request, error) {
 		Host:   c.endpoint.Host,
 		Path:   path,
 	}
+	if debug {
+		fmt.Printf("request scheme=%s, host=%s, path=%s, body=%s.\n", u.Scheme, u.Host, u.Path, body)
+	}
 	var r io.Reader
 	if body != "" {
 		r = strings.NewReader(body)
@@ -192,7 +202,7 @@ func (c *Client) newRequest(method, path, body string) (*http.Request, error) {
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error response for request: %s", err)
 	}
 	defer resp.Body.Close()
 
