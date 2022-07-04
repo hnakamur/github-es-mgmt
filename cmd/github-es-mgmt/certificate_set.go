@@ -29,6 +29,7 @@ options:
 	fs.StringVar(&c.KeyFilename, "key", "", "key PEM filename")
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
+	fs.BoolVar(&c.TLSInsecureSkipVerify, "tls-insecure-skip-verify", false, "skip verify server's certificate. Use this only when server's certificate is expired.")
 	if err := fs.Parse(args); err != nil {
 		return nil, fs
 	}
@@ -47,12 +48,13 @@ options:
 }
 
 type CertificateSetCommand struct {
-	password           string
-	Endpoint           string
-	CertFilename       string
-	KeyFilename        string
-	Timeout            time.Duration
-	WaitConfigInterval time.Duration
+	password              string
+	Endpoint              string
+	CertFilename          string
+	KeyFilename           string
+	Timeout               time.Duration
+	WaitConfigInterval    time.Duration
+	TLSInsecureSkipVerify bool
 }
 
 func (c *CertificateSetCommand) Execute() error {
@@ -61,7 +63,15 @@ func (c *CertificateSetCommand) Execute() error {
 		return err
 	}
 
-	cfg := mgmt.NewClientConfig().SetHTTPClient(&http.Client{Timeout: c.Timeout})
+	var roundTripper http.RoundTripper
+	if c.TLSInsecureSkipVerify {
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.TLSClientConfig.InsecureSkipVerify = true
+		roundTripper = transport
+	}
+	httpClient := &http.Client{Timeout: c.Timeout, Transport: roundTripper}
+
+	cfg := mgmt.NewClientConfig().SetHTTPClient(httpClient)
 	client, err := mgmt.NewClient(c.Endpoint, c.password, cfg)
 	if err != nil {
 		return err
