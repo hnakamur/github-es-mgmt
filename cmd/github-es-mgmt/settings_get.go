@@ -22,6 +22,7 @@ options:
 	fs.StringVar(&c.Endpoint, "endpoint", "", "management API endpoint (ex. https://github-es.example.jp:8443)")
 	fs.StringVar(&c.Out, "out", "-", `output filename ("-" for stdout)`)
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
+	fs.BoolVar(&c.TLSInsecureSkipVerify, "tls-insecure-skip-verify", false, "skip verify server's certificate. Use this only when server's certificate is expired.")
 	if err := fs.Parse(args); err != nil {
 		return nil, fs
 	}
@@ -39,14 +40,23 @@ options:
 }
 
 type SettingsGetCommand struct {
-	password string
-	Endpoint string
-	Out      string
-	Timeout  time.Duration
+	password              string
+	Endpoint              string
+	Out                   string
+	Timeout               time.Duration
+	TLSInsecureSkipVerify bool
 }
 
 func (c *SettingsGetCommand) Execute() error {
-	cfg := mgmt.NewClientConfig().SetHTTPClient(&http.Client{Timeout: c.Timeout})
+	var roundTripper http.RoundTripper
+	if c.TLSInsecureSkipVerify {
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.TLSClientConfig.InsecureSkipVerify = true
+		roundTripper = transport
+	}
+	httpClient := &http.Client{Timeout: c.Timeout, Transport: roundTripper}
+
+	cfg := mgmt.NewClientConfig().SetHTTPClient(httpClient)
 	client, err := mgmt.NewClient(c.Endpoint, c.password, cfg)
 	if err != nil {
 		return err
