@@ -12,7 +12,7 @@ import (
 
 type SettingsGetArgsParser struct{}
 
-func (p SettingsGetArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
+func (p SettingsGetArgsParser) Parse(command string, subcommands, args []string) (Command, error) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -24,16 +24,16 @@ options:
 	fs.DurationVar(&c.Timeout, "timeout", 10*time.Minute, "HTTP client timeout")
 	fs.BoolVar(&c.TLSInsecureSkipVerify, "tls-insecure-skip-verify", false, "skip verify server's certificate. Use this only when server's certificate is expired.")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 
 	c.password = GetManagementConsolePassword()
 
 	if c.Endpoint == "" {
-		return nil, fs.SetError("Please set \"-endpoint\" flag")
+		return nil, NewUsageError(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.Out == "" {
-		return nil, fs.SetError("Please set \"-out\" flag")
+		return nil, NewUsageError(fs, "Please set \"-out\" flag")
 	}
 
 	return &c, nil

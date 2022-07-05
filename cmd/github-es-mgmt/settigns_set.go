@@ -14,7 +14,7 @@ import (
 
 type SettingsSetArgsParser struct{}
 
-func (p SettingsSetArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
+func (p SettingsSetArgsParser) Parse(command string, subcommands, args []string) (Command, error) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -26,16 +26,16 @@ options:
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 
 	c.password = GetManagementConsolePassword()
 
 	if c.Endpoint == "" {
-		return nil, fs.SetError("Please set \"-endpoint\" flag")
+		return nil, NewUsageError(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.In == "" {
-		return nil, fs.SetError("Please set \"-in\" flag")
+		return nil, NewUsageError(fs, "Please set \"-in\" flag")
 	}
 	return &c, nil
 }

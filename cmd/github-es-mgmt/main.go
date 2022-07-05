@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,11 +18,16 @@ func main() {
 }
 
 func run() int {
-	c, u := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
-	if u != nil {
-		u.Usage()
-		return 2
+	c, err := TopLevelArgsParser{}.Parse(filepath.Base(os.Args[0]), os.Args[1:])
+	if err != nil {
+		var usageError *UsageError
+		if errors.As(err, &usageError) {
+			usageError.Usage()
+			os.Exit(2)
+		}
+		log.Fatal(err)
 	}
+
 	if err := c.Execute(); err != nil {
 		log.Print(err)
 		return 1
@@ -35,7 +41,7 @@ type Command interface {
 
 type TopLevelArgsParser struct{}
 
-func (p TopLevelArgsParser) Parse(command string, args []string) (Command, Usager) {
+func (p TopLevelArgsParser) Parse(command string, args []string) (Command, error) {
 	usage := fmt.Sprintf(`Usage: %s <subcommand> [options]
 
 subcommands:
@@ -50,11 +56,11 @@ Source repository is https://github.com/hnakamur/github-es-mgmt
 `, command, command)
 	fs := NewFlagSet(usage)
 	if err := fs.Parse(args); err != nil {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 	args = fs.Args()
 	if len(args) == 0 {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 
 	switch args[0] {
@@ -67,7 +73,7 @@ Source repository is https://github.com/hnakamur/github-es-mgmt
 	case "version":
 		return &VersionCommand{}, nil
 	default:
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 }
 

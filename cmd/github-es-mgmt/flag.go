@@ -5,32 +5,31 @@ import (
 	"fmt"
 )
 
-type Usager interface {
-	Usage()
-}
-
-type FlagSet struct {
-	*flag.FlagSet
-	errorMessage string
-}
-
-func NewFlagSet(usage string) *FlagSet {
+func NewFlagSet(usage string) *flag.FlagSet {
 	fs := flag.NewFlagSet("", flag.ExitOnError)
 	fs.Usage = func() {
 		fmt.Fprint(fs.Output(), usage)
 		fs.PrintDefaults()
 	}
-	return &FlagSet{FlagSet: fs}
-}
-
-func (fs *FlagSet) SetError(message string) *FlagSet {
-	fs.errorMessage = message
 	return fs
 }
 
-func (fs *FlagSet) Usage() {
-	fs.FlagSet.Usage()
-	if fs.errorMessage != "" {
-		fmt.Fprintf(fs.Output(), "\n%s\n", fs.errorMessage)
+type UsageError struct {
+	fs      *flag.FlagSet
+	message string
+}
+
+func NewUsageError(fs *flag.FlagSet, message string) *UsageError {
+	return &UsageError{fs: fs, message: message}
+}
+
+func (e UsageError) Error() string {
+	return fmt.Sprintf("usage error: %s", e.message)
+}
+
+func (e *UsageError) Usage() {
+	e.fs.Usage()
+	if e.message != "" {
+		fmt.Fprintf(e.fs.Output(), "\n%s\n", e.message)
 	}
 }

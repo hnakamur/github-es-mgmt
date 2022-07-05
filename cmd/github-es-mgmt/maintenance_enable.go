@@ -12,7 +12,7 @@ import (
 
 type MaintenanceEnableArgsParser struct{}
 
-func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
+func (p MaintenanceEnableArgsParser) Parse(command string, subcommands, args []string) (Command, error) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -23,16 +23,16 @@ options:
 	fs.StringVar(&c.When, "when", "", "\"now\" or any date parsable by https://github.com/mojombo/chronic")
 	fs.DurationVar(&c.Timeout, "timeout", 30*time.Second, "HTTP client timeout")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 
 	c.password = GetManagementConsolePassword()
 
 	if c.Endpoint == "" {
-		return nil, fs.SetError("Please set \"-endpoint\" flag")
+		return nil, NewUsageError(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.When == "" {
-		return nil, fs.SetError("Please set \"-when\" flag")
+		return nil, NewUsageError(fs, "Please set \"-when\" flag")
 	}
 
 	return &c, nil

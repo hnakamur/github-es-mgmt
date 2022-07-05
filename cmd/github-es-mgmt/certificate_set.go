@@ -17,7 +17,7 @@ import (
 
 type CertificateSetArgsParser struct{}
 
-func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, Usager) {
+func (p CertificateSetArgsParser) Parse(command string, subcommands, args []string) (Command, error) {
 	usage := fmt.Sprintf(`Usage: %s %s <subcommand> [options]
 
 options:
@@ -31,18 +31,18 @@ options:
 	fs.DurationVar(&c.WaitConfigInterval, "interval", time.Minute, "polling interval for waiting configuration process to be finished")
 	fs.BoolVar(&c.TLSInsecureSkipVerify, "tls-insecure-skip-verify", false, "skip verify server's certificate. Use this only when server's certificate is expired.")
 	if err := fs.Parse(args); err != nil {
-		return nil, fs
+		return nil, NewUsageError(fs, "")
 	}
 
 	c.password = GetManagementConsolePassword()
 	if c.Endpoint == "" {
-		return nil, fs.SetError("Please set \"-endpoint\" flag")
+		return nil, NewUsageError(fs, "Please set \"-endpoint\" flag")
 	}
 	if c.CertFilename == "" {
-		return nil, fs.SetError("Please set \"-cert\" flag")
+		return nil, NewUsageError(fs, "Please set \"-cert\" flag")
 	}
 	if c.KeyFilename == "" {
-		return nil, fs.SetError("Please set \"-key\" flag")
+		return nil, NewUsageError(fs, "Please set \"-key\" flag")
 	}
 	return &c, nil
 }
