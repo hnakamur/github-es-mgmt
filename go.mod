@@ -1,5 +1,5 @@
 module github.com/hnakamur/github-es-mgmt
 
-go 1.16
+go 1.23.5
 
-require golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+require github.com/alecthomas/kong v1.6.1 // indirect
