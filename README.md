@@ -1,40 +1,17 @@
 github-es-mgmt
 ==============
 
-[GitHub Enterprise Server Management Console API](https://docs.github.com/en/enterprise-server@3.0/rest/reference/enterprise-admin#management-console) client and CLI written in Go.
+This is a command line tool for setting the certificate and the key for the GitHub Enterprise Server.
+It uses [REST API endpoints for managing GitHub Enterprise Server - GitHub Enterprise Server 3.15 Docs](https://docs.github.com/en/enterprise-server@3.15/rest/enterprise-admin/manage-ghes?apiVersion=2022-11-28).
+It is written in [Go](https://go.dev/).
 
 This project is open source but closed development.
 
 ## Usage
 
-You can set the management console password to the environment variable `MGMT_PASSWORD`.
-Or you can input the password at the prompt `Enter Management Console password: `.
+### Set and apply certificate and key
 
 ```
-export MGMT_PASSWORD=_your_password_here_
+printf "%s\n%s\n" _YOUR_USERNAME_ _YOUR_PASSWORD_ \
+  | github-es-mgmt certificate set --apply --endpoint https://your-github-es.example.jp:8443 --cert /path/to/your.crt --key /path/to/your.key
 ```
-
-### Set certificate
-
-```
-github-es-mgmt certificate set -endpoint https://your-github-es.example.jp:8443 -cert /path/to/your.crt -key /path/to/your.key
-```
-
-### Get maintenance status
-
-```
-github-es-mgmt maintenance status -endpoint https://your-github-es.example.jp:8443
-```
-
-### Enable maintenance mode
-
-```
-github-es-mgmt maintenance enable -endpoint https://your-github-es.example.jp:8443 -when now
-```
-
-### Disable maintenance mode
-
-```
-github-es-mgmt maintenance disable -endpoint https://your-github-es.example.jp:8443 -when now
-```
-
