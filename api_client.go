@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type APIClient struct {
@@ -177,6 +179,16 @@ func (c *APIClient) urlForPath(path ...string) *url.URL {
 }
 
 func (c *APIClient) sendRequest(ctx context.Context, method, url string, reqBody io.Reader) (resp *http.Response, err error) {
+	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		slog.Debug("sending API request", "method", method, "url", url, "user", c.user, "maskedPassword", maskPassword(c.password))
+		startTime := time.Now()
+		defer func() {
+			if resp != nil {
+				slog.Debug("got API response", "method", method, "url", url, "status", resp.StatusCode, "elapsed", time.Since(startTime).String())
+			}
+		}()
+	}
+
 	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
 	if err != nil {
 		return nil, err

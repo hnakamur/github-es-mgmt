@@ -5,6 +5,14 @@ import (
 	"os"
 )
 
+func maskPassword(password string) string {
+	const maskedText = "[MASKED]"
+	if len(password) > 4 {
+		return password[:2] + maskedText + password[len(password)-2:]
+	}
+	return maskedText
+}
+
 func getOrReadUserAndPassword(argUser, argPassword string) (user, password string, err error) {
 	if argUser != "" && argPassword != "" {
 		return argUser, argPassword, nil

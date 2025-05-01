@@ -18,6 +18,7 @@ type CertificateSetCmd struct {
 	Endpoint string `required:"" env:"GHES_MANAGE_APIE_NDPOINT" help:"GHES Management API Endpoint (ex. https://your-github.example.jp:8443/manage)"`
 	User     string `help:"A Management Console user name or \"api_key\" for the Root Site Administrator. Read from standard input when --user is not set"`
 	Password string `help:"A password for a Management Console user or the Root Site Administrator. Read from standard input when --password is not set."`
+	Debug    bool   `help:"Enable debug mode"`
 
 	Cert                     string        `required:"" help:"The certificate file"`
 	Key                      string        `required:"" help:"The key file"`
@@ -26,6 +27,10 @@ type CertificateSetCmd struct {
 }
 
 func (c *CertificateSetCmd) Run(ctx *Context) error {
+	if c.Debug {
+		setSlogLevelDebug()
+	}
+
 	user, password, err := getOrReadUserAndPassword(c.User, c.Password)
 	if err != nil {
 		return err
@@ -97,12 +102,17 @@ type CertificateGetCmd struct {
 	Endpoint string `required:"" env:"GHES_MANAGE_APIE_NDPOINT" help:"GHES Management API Endpoint (ex. https://your-github.example.jp:8443/manage)"`
 	User     string `help:"A Management Console user name or \"api_key\" for the Root Site Administrator. Read from standard input when --user is not set"`
 	Password string `help:"A password for a Management Console user or the Root Site Administrator. Read from standard input when --password is not set."`
+	Debug    bool   `help:"Enable debug mode"`
 
 	Cert string `required:"" help:"The certificate file to save"`
 	Key  string `required:"" help:"The key file to save"`
 }
 
 func (c *CertificateGetCmd) Run(ctx *Context) error {
+	if c.Debug {
+		setSlogLevelDebug()
+	}
+
 	user, password, err := getOrReadUserAndPassword(c.User, c.Password)
 	if err != nil {
 		return err

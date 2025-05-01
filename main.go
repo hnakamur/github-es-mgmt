@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"runtime/debug"
 
 	"github.com/alecthomas/kong"
@@ -12,6 +14,12 @@ var cli struct {
 	Certificate CertificateCmd `cmd:"" help:"Subdommand for the GHES certificate."`
 	Settings    SettingsCmd    `cmd:"" help:"Subdommand for the GHES Settings."`
 	Version     VersionCmd     `cmd:"" help:"Show version and exit."`
+}
+
+var programSlogLevel = new(slog.LevelVar)
+
+func setSlogLevelDebug() {
+	programSlogLevel.Set(slog.LevelDebug)
 }
 
 type Context struct {
@@ -26,6 +34,9 @@ func (v *VersionCmd) Run(ctx *Context) error {
 }
 
 func main() {
+	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: programSlogLevel})
+	slog.SetDefault(slog.New(h))
+
 	ctx := kong.Parse(&cli)
 	err := ctx.Run(&Context{
 		Context: context.WithValue(context.Background(), "key1", "value1"),
