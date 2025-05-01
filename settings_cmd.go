@@ -10,7 +10,7 @@ type SettingsCmd struct {
 }
 
 type SettingsGetCmd struct {
-	Endpoint string `required:"" env:"GHES_MANAGE_APIE_NDPOINT" help:"GHES Management API Endpoint (ex. https://your-github.example.jp:8443/manage)"`
+	Endpoint string `required:"" env:"GHES_MANAGE_API_ENDPOINT" help:"GHES Management API Endpoint (ex. https://your-github.example.jp:8443/manage)"`
 	User     string `help:"A Management Console user name or \"api_key\" for the Root Site Administrator. Read from standard input when --user is not set"`
 	Password string `help:"A password for a Management Console user or the Root Site Administrator. Read from standard input when --password is not set."`
 	Debug    bool   `help:"Enable debug mode"`
