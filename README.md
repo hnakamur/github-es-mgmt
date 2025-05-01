@@ -13,5 +13,5 @@ This project is open source but closed development.
 
 ```
 printf "%s\n%s\n" _YOUR_USERNAME_ _YOUR_PASSWORD_ \
-  | github-es-mgmt certificate set --apply --endpoint https://your-github-es.example.jp:8443 --cert /path/to/your.crt --key /path/to/your.key
+  | github-es-mgmt certificate set --apply --endpoint https://your-github-es.example.jp:8443/manage --cert /path/to/your.crt --key /path/to/your.key
 ```
